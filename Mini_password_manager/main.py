@@ -10,12 +10,17 @@ import csv
 from datetime import datetime
 from ttkthemes import ThemedTk
 from gui.dialogs import AddPasswordDialog
+from gui.styles import apply_styles
+import gui.dialogs as dialogs
 
 class PasswordManager:
     def __init__(self):
         self.root = ThemedTk(theme="arc")  # Modern theme
         self.root.title("Secure Password Manager")
         self.root.geometry("800x600")
+        
+        # Apply styles
+        apply_styles()
         
         # Initialize encryption key
         self.key = None
@@ -27,6 +32,10 @@ class PasswordManager:
         self.load_data()
         
         self.setup_gui()
+        
+        # Disable password and settings tabs until login
+        self.notebook.tab(1, state="disabled")
+        self.notebook.tab(2, state="disabled")
     
     def load_data(self):
         if os.path.exists(self.data_file):
@@ -114,6 +123,9 @@ class PasswordManager:
         self.search_entry = ttk.Entry(search_frame)
         self.search_entry.pack(side="left", fill="x", expand=True, padx=5)
         self.search_entry.bind('<KeyRelease>', self.search_passwords)
+        
+        # Add right-click menu
+        self.tree.bind("<Button-3>", self.show_context_menu)
     
     def setup_settings_page(self):
         ttk.Label(self.settings_frame, text="Settings", 
@@ -134,10 +146,20 @@ class PasswordManager:
             messagebox.showerror("Error", "Please enter master password")
             return
             
-        self.key = self.generate_key(master_password)
-        self.fernet = Fernet(self.key)
-        self.refresh_password_list()
-        self.notebook.select(1)  # Switch to passwords tab
+        try:
+            self.key = self.generate_key(master_password)
+            self.fernet = Fernet(self.key)
+            # Verify the password by trying to decrypt something
+            for _, data in self.passwords.items():
+                self.fernet.decrypt(data['password'].encode())
+                break
+            # Enable tabs after successful login
+            self.notebook.tab(1, state="normal")
+            self.notebook.tab(2, state="normal")
+            self.refresh_password_list()
+            self.notebook.select(1)  # Switch to passwords tab
+        except:
+            messagebox.showerror("Error", "Invalid master password!")
     
     def create_master_password(self):
         dialog = tk.Toplevel(self.root)
@@ -263,6 +285,122 @@ class PasswordManager:
             self.passwords = {}
             self.save_data()
             self.refresh_password_list()
+    
+    def change_master_password(self):
+        if not self.fernet:
+            messagebox.showerror("Error", "Please login first")
+            return
+        
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Change Master Password")
+        dialog.geometry("300x250")
+        
+        ttk.Label(dialog, text="Current Password:").pack(pady=5)
+        current_password = ttk.Entry(dialog, show="*")
+        current_password.pack(pady=5)
+        
+        ttk.Label(dialog, text="New Password:").pack(pady=5)
+        new_password = ttk.Entry(dialog, show="*")
+        new_password.pack(pady=5)
+        
+        ttk.Label(dialog, text="Confirm New Password:").pack(pady=5)
+        confirm_password = ttk.Entry(dialog, show="*")
+        confirm_password.pack(pady=5)
+        
+        def change_password():
+            if new_password.get() != confirm_password.get():
+                messagebox.showerror("Error", "New passwords don't match!")
+                return
+            if len(new_password.get()) < 8:
+                messagebox.showerror("Error", "Password too short!")
+                return
+            
+            # Verify current password
+            try:
+                test_key = self.generate_key(current_password.get())
+                test_fernet = Fernet(test_key)
+                # Try to decrypt something to verify the password
+                for _, data in self.passwords.items():
+                    test_fernet.decrypt(data['password'].encode())
+                    break
+            except:
+                messagebox.showerror("Error", "Current password is incorrect!")
+                return
+            
+            # Re-encrypt all passwords with new key
+            new_key = self.generate_key(new_password.get())
+            new_fernet = Fernet(new_key)
+            
+            for account in self.passwords:
+                decrypted = self.fernet.decrypt(
+                    self.passwords[account]['password'].encode()).decode()
+                self.passwords[account]['password'] = new_fernet.encrypt(
+                    decrypted.encode()).decode()
+            
+            self.key = new_key
+            self.fernet = new_fernet
+            self.save_data()
+            dialog.destroy()
+            messagebox.showinfo("Success", "Master password changed successfully!")
+        
+        ttk.Button(dialog, text="Change Password", 
+                   command=change_password).pack(pady=20)
+    
+    def show_context_menu(self, event):
+        if not self.tree.selection():
+            return
+        
+        menu = tk.Menu(self.root, tearoff=0)
+        menu.add_command(label="Copy Username", 
+                        command=lambda: self.copy_to_clipboard("username"))
+        menu.add_command(label="Copy Password", 
+                        command=lambda: self.copy_to_clipboard("password"))
+        menu.add_command(label="Edit", command=self.edit_password)
+        menu.add_command(label="Delete", command=self.delete_password)
+        
+        menu.tk_popup(event.x_root, event.y_root)
+    
+    def copy_to_clipboard(self, field):
+        selection = self.tree.selection()[0]
+        item = self.tree.item(selection)
+        value = item['values'][1 if field == "username" else 2]
+        
+        if field == "password" and self.is_encrypted:
+            encrypted = self.passwords[item['values'][0]]['password']
+            value = self.fernet.decrypt(encrypted.encode()).decode()
+        
+        self.root.clipboard_clear()
+        self.root.clipboard_append(value)
+        messagebox.showinfo("Success", f"{field.title()} copied to clipboard!")
+    
+    def edit_password(self):
+        selection = self.tree.selection()[0]
+        item = self.tree.item(selection)
+        account = item['values'][0]
+        
+        dialog = AddPasswordDialog(self.root)
+        dialog.account_entry.insert(0, account)
+        dialog.username_entry.insert(0, self.passwords[account]['username'])
+        if not self.is_encrypted:
+            decrypted = self.fernet.decrypt(
+                self.passwords[account]['password'].encode()).decode()
+            dialog.password_entry.insert(0, decrypted)
+        
+        self.root.wait_window(dialog.dialog)
+        if dialog.result:
+            self.add_password(dialog.result)
+    
+    def delete_password(self):
+        if not messagebox.askyesno("Confirm", "Are you sure you want to delete this password?"):
+            return
+        
+        selection = self.tree.selection()[0]
+        item = self.tree.item(selection)
+        account = item['values'][0]
+        
+        del self.passwords[account]
+        self.save_data()
+        self.refresh_password_list()
     
     def run(self):
         self.root.mainloop()
