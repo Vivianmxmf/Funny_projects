@@ -1,0 +1,2 @@
+cryptography>=3.4.7
+ttkthemes>=3.2.2 
