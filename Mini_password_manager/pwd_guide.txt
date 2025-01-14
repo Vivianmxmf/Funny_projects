@@ -75,21 +75,127 @@ Technical Highlights:
 • Scalable data storage solution
 
 
-SECTION 3: DEVELOPER DOCUMENTATION
---------------------------------
+SECTION 3: DEVELOPER DOCUMENTATION (Web Version Update)
+----------------------------------------------------
 
-Project Structure:
+Updated Project Structure:
 /Mini_password_manager
-├── main.py           # Main application entry
-├── requirements.txt  # Dependencies
-├── gui/
-│   ├── __init__.py
-│   ├── dialogs.py   # Dialog windows
-│   └── styles.py    # UI styling
-└── utils/
-    ├── __init__.py
-    ├── encryption.py # Encryption utilities
-    └── password_generator.py # Password generation
+├── backend/
+│   ├── app.py              # Flask backend application
+│   ├── init_db.sql         # Database initialization
+│   └── config.py           # Configuration settings
+├── frontend/
+│   ├── index.html          # Main HTML file
+│   ├── css/
+│   │   └── styles.css      # Custom styles
+│   └── js/
+│       ├── api.js          # API integration
+│       ├── auth.js         # Authentication logic
+│       ├── passwords.js    # Password management
+│       └── app.js          # Main application logic
+└── requirements.txt        # Python dependencies
+
+Web Application Components:
+
+1. Backend (Flask + PostgreSQL):
+   - RESTful API endpoints
+   - JWT authentication
+   - Database models and migrations
+   - Encryption services
+   - Error handling middleware
+   - CORS configuration
+
+2. Frontend (HTML + CSS + JavaScript):
+   - Modern responsive design
+   - Real-time password management
+   - Client-side encryption
+   - Secure authentication flow
+   - Interactive UI components
+
+3. Database Schema:
+   - Users table for authentication
+   - Passwords table for encrypted storage
+   - Proper indexing and relationships
+   - Data integrity constraints
+
+4. Security Implementations:
+   - JWT token-based authentication
+   - Password hashing with salt
+   - Encryption key management
+   - HTTPS enforcement
+   - XSS protection
+   - CSRF protection
+
+5. API Endpoints:
+   - /api/register: User registration
+   - /api/login: User authentication
+   - /api/passwords: Password CRUD operations
+   - /api/export: Data export functionality
+   - /api/settings: User preferences
+
+Development Setup:
+1. Database Setup:
+   ```bash
+   psql -U postgres
+   \i backend/init_db.sql
+   ```
+
+2. Backend Setup:
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   flask run
+   ```
+
+3. Frontend Setup:
+   ```bash
+   cd frontend
+   # Use any static file server
+   python -m http.server 8000
+   ```
+
+Testing Strategy:
+1. Unit Tests:
+   - API endpoint testing
+   - Encryption/decryption
+   - Authentication flow
+   - Database operations
+
+2. Integration Tests:
+   - Frontend-backend integration
+   - Database transactions
+   - Error handling
+
+3. End-to-End Tests:
+   - User workflows
+   - Cross-browser testing
+   - Performance testing
+
+4. Security Testing:
+   - Penetration testing
+   - Vulnerability scanning
+   - Load testing
+
+Deployment Considerations:
+1. Database:
+   - Regular backups
+   - Connection pooling
+   - Query optimization
+   - High availability setup
+
+2. Backend:
+   - Gunicorn/uWSGI deployment
+   - Nginx reverse proxy
+   - SSL/TLS configuration
+   - Rate limiting
+
+3. Frontend:
+   - Static file hosting
+   - CDN integration
+   - Asset optimization
+   - Cache management
 
 Key Components Workflow:
 
