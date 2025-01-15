@@ -260,3 +260,164 @@ Maintenance Guidelines:
 3. Code documentation
 4. User feedback integration
 5. Performance optimization 
+
+SECTION 4: HOW TO USE
+--------------------
+
+Project Setup with Docker:
+
+1. Prerequisites:
+   - Docker and Docker Compose installed
+   - Git (optional, for cloning)
+   - Web browser
+   - Terminal/Command Prompt
+
+2. Initial Setup:
+   ```bash
+   # Clone or navigate to project directory
+   cd /path/to/Mini_password_manager
+
+   # Build and start containers
+   docker-compose up --build
+   ```
+
+3. Database Setup:
+   ```bash
+   # In a new terminal, seed the database
+   docker-compose exec web python backend/seed.py
+   ```
+
+4. Accessing Components:
+
+   a. Frontend Application:
+      - Open browser: http://localhost:5000
+      - Default test account:
+        * Email: test@example.com
+        * Password: test123
+
+   b. PostgreSQL Database:
+      - Host: localhost
+      - Port: 5432
+      - Database: password_manager
+      - Username: postgres
+      - Password: password
+
+   c. pgAdmin (Database Management):
+      - Open browser: http://localhost:5050
+      - Login:
+        * Email: admin@admin.com
+        * Password: admin
+      - To connect to database in pgAdmin:
+        1. Right-click 'Servers' → 'Create' → 'Server'
+        2. Name: Password Manager
+        3. Connection tab:
+           * Host: db
+           * Port: 5432
+           * Database: password_manager
+           * Username: postgres
+           * Password: password
+
+5. Common Commands:
+
+   Start application:
+   ```bash
+   docker-compose up
+   ```
+
+   Stop application:
+   ```bash
+   docker-compose down
+   ```
+
+   View logs:
+   ```bash
+   docker-compose logs -f
+   ```
+
+   Rebuild containers:
+   ```bash
+   docker-compose up --build
+   ```
+
+   Access container shell:
+   ```bash
+   docker-compose exec web bash
+   docker-compose exec db bash
+   ```
+
+   Reset database:
+   ```bash
+   docker-compose down -v
+   docker-compose up --build
+   docker-compose exec web python backend/seed.py
+   ```
+
+6. Development Workflow:
+
+   a. Frontend Changes:
+      - Edit files in frontend/
+      - Changes reflect immediately (no rebuild needed)
+
+   b. Backend Changes:
+      - Edit files in backend/
+      - Flask debug mode is enabled, changes reflect automatically
+
+   c. Database Changes:
+      - Edit backend/init_db.sql
+      - Reset database using commands in step 5
+
+7. Troubleshooting:
+
+   Database connection issues:
+   ```bash
+   # Check if database is running
+   docker-compose ps
+
+   # View database logs
+   docker-compose logs db
+
+   # Reset database
+   docker-compose down -v
+   docker-compose up --build
+   ```
+
+   Frontend not loading:
+   ```bash
+   # Check web server logs
+   docker-compose logs web
+
+   # Rebuild frontend
+   docker-compose up --build web
+   ```
+
+   Permission issues:
+   ```bash
+   # Fix permission issues
+   sudo chown -R $USER:$USER .
+   ```
+
+8. Backup and Restore:
+
+   Backup database:
+   ```bash
+   docker-compose exec db pg_dump -U postgres password_manager > backup.sql
+   ```
+
+   Restore database:
+   ```bash
+   docker-compose exec -T db psql -U postgres password_manager < backup.sql
+   ```
+
+9. Security Notes:
+   - Change default passwords in production
+   - Use HTTPS in production
+   - Regularly update dependencies
+   - Back up data regularly
+   - Monitor logs for suspicious activity
+
+10. Production Deployment:
+    - Update docker-compose.prod.yml with production settings
+    - Use proper SSL certificates
+    - Set secure passwords
+    - Configure proper backup strategy
+    - Set up monitoring and alerting 
