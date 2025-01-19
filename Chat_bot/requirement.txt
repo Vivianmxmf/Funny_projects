@@ -1,0 +1,6 @@
+requests
+langchain
+chromadb
+pandas 
+sqlalchemy
+openai
