@@ -11,3 +11,8 @@ Funny small projects based on python
 
 ## Picture_resolution_Compresser
 
+## Comment_Platform
+
+## Doordec_Builder
+
+## 
